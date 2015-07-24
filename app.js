@@ -2,7 +2,18 @@ var express = require('express');
 var fortune = require('./lib/fortune.js');
 var app = express();
 
-var handlebars = require('express-handlebars').create({defaultLayout: 'main'});
+var handlebars = require('express-handlebars').create({
+  defaultLayout: 'main',
+  helpers: {
+    section: function (name, options) {
+      if (!this._sections) {
+        this._sections = {};
+      }
+      this._sections[name] = options.fn(this);
+      return null;
+    }
+  }
+});
 
 app.engine('handlebars', handlebars.engine);
 
@@ -74,6 +85,10 @@ app.get('/tours/oregon-coast', function (req, res) {
 
 app.get('/tours/request-group-rate', function (req, res) {
   res.render('tours/request-group-rate');
+});
+
+app.get('/jquery-test', function(req, res){
+  res.render('jquery-test');
 });
 
 app.use(function (req, res) {
