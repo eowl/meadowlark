@@ -41,7 +41,7 @@ app.use(function (req, res, next) {
   res.locals.flash = req.session.flash;
   delete req.session.flash;
   next();
-})
+});
 
 app.use(function (req, res, next) {
   res.locals.showTests = app.get('env') !== 'production' && req.query.test === '1';
@@ -74,7 +74,7 @@ function getWeatherData(){
             },
         ],
     };
-}
+};
 
 app.use(function (req, res, next) {
   if (!res.locals.partials) {
@@ -82,7 +82,7 @@ app.use(function (req, res, next) {
   }
   res.locals.partials.weathers = getWeatherData();
   next();
-})
+});
 
 app.get('/', function (req, res) {
   res.render('home');
@@ -129,7 +129,7 @@ app.get('/newsletter', function (req, res) {
 });
 
 function NewsletterSignup () {
-  
+
 };
 
 NewsletterSignup.prototype.save = function (callback) {
@@ -140,7 +140,7 @@ var VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z
 
 app.post('/newsletter', function(req, res){
   var name = req.body.name || '', email = req.body.email || '';
-  
+
   if(!email.match(VALID_EMAIL_REGEX)) {
     if(req.xhr) return res.json({ error: 'Invalid name email address.' });
     req.session.flash = {
@@ -204,7 +204,7 @@ app.post('/contest/vacation-photo/:year/:month', function (req, res) {
     console.log(files);
     res.redirect(303, '/thank-you');
   })
-})
+});
 
 app.use(function (req, res) {
   res.status(404);
@@ -218,6 +218,6 @@ app.use(function (err, req, res, next) {
 });
 
 app.listen(app.get('port'), function () {
-  console.log('Exress started on http://localhost:' + 
+  console.log('Exress started on http://localhost:' +
     app.get('port') + '; press Ctrl-C to terminate.');
 });
