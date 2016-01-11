@@ -280,6 +280,11 @@ app.get('/adventures/:subcat/:name', function(req, res, next){
   });
 });
 
+var cartValidation = require('./lib/cartValidation.js');
+
+app.use(cartValidation.checkWaivers);
+app.use(cartValidation.checkGuestCounts);
+
 app.post('/cart/add', function(req, res, next){
   var cart = req.session.cart || (req.session.cart = []);
   Product.findOne({ sku: req.body.sku }, function(err, product){
