@@ -1,3 +1,4 @@
+var http = require('http');
 var express = require('express');
 var bodyParser = require('body-parser');
 var formidable = require('formidable');
@@ -323,7 +324,16 @@ app.use(function (err, req, res, next) {
   res.render('500');
 });
 
-app.listen(app.get('port'), function () {
-  console.log('Exress started on http://localhost:' +
-    app.get('port') + '; press Ctrl-C to terminate.');
-});
+function startServer() {
+  http.createServer(app).listen(app.get('port'), function () {
+    console.log('Express started in ' + app.get('env') +
+      ' mode on http://localhost:' + app.get('port') +
+      '; press Ctrl-C to terminate.')
+  });
+}
+
+if (require.main == module) {
+  startServer();
+} else {
+  module.exports = startServer;
+}
