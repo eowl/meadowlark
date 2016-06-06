@@ -16,6 +16,7 @@
     "express-logger": "0.0.3",
     "express-session": "^1.11.3",
     "formidable": "^1.0.17",
+    "mongoose": "^4.4.20",
     "morgan": "^1.7.0"
   },
   "devDependencies": {

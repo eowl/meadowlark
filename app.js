@@ -47,6 +47,21 @@ app.use(express.static(__dirname + '/public'));
 
 app.use(bodyParser());
 
+var mongoose = require('mongoose');
+
+switch(app.get('env')) {
+  case 'development':
+    mongoose.connect(config.mongo.development.connectionString);
+    break;
+  case 'production':
+    mongoose.connect(config.mongo.production.connectionString);
+    break;
+  default:
+    throw new Error('Unknown execution environment: ' + app.get('env'));
+}
+
+Vacation = require('./models/vacation.js');
+
 app.use(function (req, res, next) {
   res.locals.flash = req.session.flash;
   delete req.session.flash;
@@ -59,31 +74,31 @@ app.use(function (req, res, next) {
 });
 
 function getWeatherData(){
-    return {
-        locations: [
-            {
-                name: 'Portland',
-                forecastUrl: 'http://www.wunderground.com/US/OR/Portland.html',
-                iconUrl: 'http://icons-ak.wxug.com/i/c/k/cloudy.gif',
-                weather: 'Overcast',
-                temp: '54.1 F (12.3 C)',
-            },
-            {
-                name: 'Bend',
-                forecastUrl: 'http://www.wunderground.com/US/OR/Bend.html',
-                iconUrl: 'http://icons-ak.wxug.com/i/c/k/partlycloudy.gif',
-                weather: 'Partly Cloudy',
-                temp: '55.0 F (12.8 C)',
-            },
-            {
-                name: 'Manzanita',
-                forecastUrl: 'http://www.wunderground.com/US/OR/Manzanita.html',
-                iconUrl: 'http://icons-ak.wxug.com/i/c/k/rain.gif',
-                weather: 'Light Rain',
-                temp: '55.0 F (12.8 C)',
-            },
-        ],
-    };
+  return {
+    locations: [
+      {
+        name: 'Portland',
+        forecastUrl: 'http://www.wunderground.com/US/OR/Portland.html',
+        iconUrl: 'http://icons-ak.wxug.com/i/c/k/cloudy.gif',
+        weather: 'Overcast',
+        temp: '54.1 F (12.3 C)',
+      },
+      {
+        name: 'Bend',
+        forecastUrl: 'http://www.wunderground.com/US/OR/Bend.html',
+        iconUrl: 'http://icons-ak.wxug.com/i/c/k/partlycloudy.gif',
+        weather: 'Partly Cloudy',
+        temp: '55.0 F (12.8 C)',
+      },
+      {
+        name: 'Manzanita',
+        forecastUrl: 'http://www.wunderground.com/US/OR/Manzanita.html',
+        iconUrl: 'http://icons-ak.wxug.com/i/c/k/rain.gif',
+        weather: 'Light Rain',
+        temp: '55.0 F (12.8 C)',
+      },
+    ],
+  };
 };
 
 app.use(function (req, res, next) {
@@ -138,71 +153,6 @@ NewsletterSignup.prototype.save = function (callback) {
   callback();
 };
 
-function Product(){
-}
-Product.find = function(conditions, fields, options, cb){
-  if(typeof conditions==='function') {
-    cb = conditions;
-    conditions = {};
-    fields = null;
-    options = {};
-  } else if(typeof fields==='function') {
-    cb = fields;
-    fields = null;
-    options = {};
-  } else if(typeof options==='function') {
-    cb = options;
-    options = {};
-  }
-  var products = [
-    {
-      name: 'Hood River Tour',
-      slug: 'hood-river',
-      category: 'tour',
-      maximumGuests: 15,
-      sku: 723,
-    },
-    {
-      name: 'Oregon Coast Tour',
-      slug: 'oregon-coast',
-      category: 'tour',
-      maximumGuests: 10,
-      sku: 446,
-    },
-    {
-      name: 'Rock Climbing in Bend',
-      slug: 'rock-climbing/bend',
-      category: 'adventure',
-      requiresWaiver: true,
-      maximumGuests: 4,
-      sku: 944,
-    }
-  ];
-  cb(null, products.filter(function(p) {
-    if(conditions.category && p.category!==conditions.category) return false;
-    if(conditions.slug && p.slug!==conditions.slug) return false;
-    if(isFinite(conditions.sku) && p.sku!==Number(conditions.sku)) return false;
-    return true;
-  }));
-};
-Product.findOne = function(conditions, fields, options, cb){
-  if(typeof conditions==='function') {
-    cb = conditions;
-    conditions = {};
-    fields = null;
-    options = {};
-  } else if(typeof fields==='function') {
-    cb = fields;
-    fields = null;
-    options = {};
-  } else if(typeof options==='function') {
-    cb = options;
-    options = {};
-  }
-  Product.find(conditions, fields, options, function(err, products){
-    cb(err, products && products.length ? products[0] : null);
-  });
-};
 
 var VALID_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
@@ -274,19 +224,43 @@ app.post('/contest/vacation-photo/:year/:month', function (req, res) {
   })
 });
 
-app.get('/tours/:tour', function(req, res, next){
-  Product.findOne({ category: 'tour', slug: req.params.tour }, function(err, tour){
+app.get('/vacation/:vacation', function(req, res, next){
+  Vacation.findOne({ slug: req.params.vacation }, function(err, vacation){
     if(err) return next(err);
-    if(!tour) return next();
-    res.render('tour', { tour: tour });
+    if(!vacation) return next();
+    res.render('vacation', { vacation: vacation });
   });
 });
 
-app.get('/adventures/:subcat/:name', function(req, res, next){
-  Product.findOne({ category: 'adventure', slug: req.params.subcat + '/' + req.params.name  }, function(err, adventure){
-    if(err) return next(err);
-    if(!adventure) return next();
-    res.render('adventure', { adventure: adventure });
+function convertFromUSD(value, currency){
+  switch(currency){
+    case 'USD': return value * 1;
+    case 'GBP': return value * 0.6;
+    default: return NaN;
+  }
+}
+
+app.get('/vacations', function(req, res){
+  Vacation.find({ available: true }, function(err, vacations){
+    var currency = req.session.currency || 'USD';
+    var context = {
+      currency: currency,
+      vacations: vacations.map(function(vacation){
+        return {
+          sku: vacation.sku,
+          name: vacation.name,
+          description: vacation.description,
+          inSeason: vacation.inSeason,
+          price: convertFromUSD(vacation.priceInCents / 100, currency),
+          qty: vacation.qty,
+        };
+      })
+    };
+    switch(currency){
+      case 'USD': context.currencyUSD = 'selected'; break;
+      case 'GBP': context.currencyGBP = 'selected'; break;
+    }
+    res.render('vacations', context);
   });
 });
 
@@ -295,14 +269,27 @@ var cartValidation = require('./lib/cartValidation.js');
 app.use(cartValidation.checkWaivers);
 app.use(cartValidation.checkGuestCounts);
 
-app.post('/cart/add', function(req, res, next){
-  var cart = req.session.cart || (req.session.cart = []);
-  Product.findOne({ sku: req.body.sku }, function(err, product){
+app.get('/cart/add', function(req, res, next){
+  var cart = req.session.cart || (req.session.cart = { items: [] });
+  Vacation.findOne({ sku: req.query.sku }, function(err, vacation){
     if(err) return next(err);
-    if(!product) return next(new Error('Unknown product SKU: ' + req.body.sku));
-    cart.push({
-      product: product,
-      guests: req.body.guests || 0,
+    if(!vacation) return next(new Error('Unknown vacation SKU: ' + req.query.sku));
+    cart.items.push({
+      vacation: vacation,
+      guests: req.body.guests || 1,
+    });
+    res.redirect(303, '/cart');
+  });
+});
+
+app.post('/cart/add', function(req, res, next){
+  var cart = req.session.cart || (req.session.cart = { items: [] });
+  Vacation.findOne({ sku: req.body.sku }, function(err, vacation){
+    if(err) return next(err);
+    if(!vacation) return next(new Error('Unknown vacation SKU: ' + req.body.sku));
+    cart.items.push({
+      vacation: vacation,
+      guests: req.body.guests || 1,
     });
     res.redirect(303, '/cart');
   });
@@ -311,6 +298,40 @@ app.post('/cart/add', function(req, res, next){
 app.get('/cart', function(req, res){
   var cart = req.session.cart || (req.session.cart = []);
   res.render('cart', { cart: cart });
+});
+
+app.get('/notify-me-when-in-season', function(req, res){
+  res.render('notify-me-when-in-season', { sku: req.query.sku });
+});
+
+app.post('/notify-me-when-in-season', function(req, res){
+  VacationInSeasonListener.update(
+    { email: req.body.email },
+    { $push: { skus: req.body.sku } },
+    { upsert: true },
+    function(err){
+      if(err) {
+        console.error(err.stack);
+        req.session.flash = {
+          type: 'danger',
+          intro: 'Ooops!',
+          message: 'There was an error processing your request.',
+        };
+        return res.redirect(303, '/vacations');
+      }
+      req.session.flash = {
+        type: 'success',
+        intro: 'Thank you!',
+        message: 'You will be notified when this vacation is in season.',
+      };
+      return res.redirect(303, '/vacations');
+    }
+  );
+});
+
+app.get('/set-currency/:currency', function(req,res){
+  req.session.currency = req.params.currency;
+  return res.redirect(303, '/vacations');
 });
 
 app.use(function (req, res) {
