@@ -6,7 +6,7 @@ var fortune = require('./lib/fortune.js');
 
 var app = express();
 
-var credentials = require('./credentials.js');
+var config = require('./config.js');
 
 var handlebars = require('express-handlebars').create({
   defaultLayout: 'main',
@@ -36,11 +36,11 @@ switch(app.get('env')){
     break;
 }
 
-app.use(require('cookie-parser')(credentials.cookieSecret));
+app.use(require('cookie-parser')(config.cookieSecret));
 app.use(require('express-session')({
     resave: false,
     saveUninitialized: false,
-    secret: credentials.cookieSecret,
+    secret: config.cookieSecret,
 }));
 
 app.use(express.static(__dirname + '/public'));
