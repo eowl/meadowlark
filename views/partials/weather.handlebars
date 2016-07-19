@@ -2,13 +2,8 @@
   {{#each partials.weathers.locations}}
     <div class="location">
       <h3>{{name}}</h3>
-      <a href="{{forecastUrl}}">
-        <img src="{{iconUrl}}" alt="{{weather}}">
-        {{weather}}, {{temp}}
-      </a>
+      <span>{{weather}}</span>
+      <span class="text-info">{{temp}}</span>
     </div>
   {{/each}}
-  <small>
-    Source: <a href="http://www.wunderground.com">Weather Underground</a>
-  </small>
 </div>
